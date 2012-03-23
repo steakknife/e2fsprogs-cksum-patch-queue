@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+branch_name=${branch_name:-inode_csum}
+
+cd e2fsprogs
+git reset --hard
+git clean -dff || true
+git clean -Xf || true
+git checkout master
+git branch -D $branch_name || true
+

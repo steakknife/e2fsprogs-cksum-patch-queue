@@ -1,0 +1,32 @@
+#!/bin/sh
+set -e
+
+
+hack1() {
+  \sed -iE 's/     if \\(fs->super->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_GDT_CSUM\\)/ if \\(ext2fs_has_group_desc_csum\\(fs\\)\\)/' misc/dumpe2fs.c
+  \rm -f misc/dumpe2fs.cE
+}
+
+[ -e "e2fsprogs" ] || git clone git://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git
+
+export branch_name=${branch_name:-inode_csum}
+./rewind
+
+cd e2fsprogs
+git branch $branch_name
+git checkout $branch_name
+
+cat ../series | while read -r patch_name
+do
+  if ! [ -r "../$patch_name" ]
+  then
+    echo "Error ../$patch_name not found"
+    exit 1
+  fi
+  project_name="`echo $patch_name | sed 's/-.*//'`"
+  commit="$project_name: `echo $patch_name | tr '-' ' ' | cut -d' ' -f2-`"
+  echo "--------------------------- Commit $commit"
+  patch -ulNp1 --no-backup-if-mismatch -r /dev/null -F20 < ../$patch_name  || hack1
+  git add -A 
+  git commit -m "$commit"
+done 
